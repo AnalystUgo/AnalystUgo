@@ -32,49 +32,48 @@ declare @transdate date
 		select @transdate= DATEADD(day,@randomdays,@startdate)
 		
 		select @grossamount=  @quantity *
-								(	select unitprice
-										from dbo.equipment
-										where equipmentid= @equipmentid)
+						(select unitprice
+						from dbo.equipment
+						where equipmentid= @equipmentid)
 
 	   select @Discountamount =@grossamount *
-								(select discountpercent
-								  from dbo.equipment
-								where equipmentid= @equipmentid)
+						(select discountpercent
+						from dbo.equipment
+						where equipmentid= @equipmentid)
 		
 		select @floatrateamount = case 
-									when @quantity >=100 and @quantity <=150 then 
-									@quantity * 
-										
-										(select f.floatrate
-										from Equipment e
-										join Float_Category f
-										on e.FloatCategoryID=f.FloatCategoryID
-										where e.EquipmentID = @equipmentid )
-										else 0
-										end 
+					when @quantity >=100 and @quantity <=150 then 
+						@quantity * 				
+						(select f.floatrate
+						from Equipment e
+						join Float_Category f
+						on e.FloatCategoryID=f.FloatCategoryID
+						where e.EquipmentID = @equipmentid )
+						else 0
+						end 
 
 		select @floatexceededamount = case 
-									when @quantity >150 and @quantity <=300 then 
-									@quantity * 
-										(
-										select f.floatrate
-										from Equipment e
-										join Float_Category f
-										on e.FloatCategoryID=f.FloatCategoryID
-										where e.EquipmentID = @equipmentid )
-										else 0
-										end
+						when @quantity >150 and @quantity <=300 then 
+						@quantity * 
+							(
+							select f.floatrate
+							from Equipment e
+							join Float_Category f
+							on e.FloatCategoryID=f.FloatCategoryID
+							where e.EquipmentID = @equipmentid )
+							else 0
+							end
 
 		select @postalvariationamount = 
-										(select
-										case 
-										when  postalcode >= 7000 and postalcode <= 50000 then  (0.002*(@quantity))
-										when postalcode >= 50001 and postalcode <=70000 then (0.05 * (@quantity ) )
-										when  postalcode >= 70001 and postalcode <=90000 then (0.062 * (@quantity))
-										when  postalcode >=90001 then (0.0078 * (@quantity ))
-										end  as postalcode
-										from dbo.customer
-										where customerid = @customerid)
+						(select
+						        case 
+							when  postalcode >= 7000 and postalcode <= 50000 then  (0.002*(@quantity))
+							when postalcode >= 50001 and postalcode <=70000 then (0.05 * (@quantity ) )
+							when  postalcode >= 70001 and postalcode <=90000 then (0.062 * (@quantity))
+							when  postalcode >=90001 then (0.0078 * (@quantity ))
+							end  as postalcode
+							from dbo.customer
+							where customerid = @customerid)
 
 		Insert into Equipment_Transaction(TransDate,Customerid,Equipmentid,quantity,GrossAmount,DiscountAmount,FloatRateAmount,FloatExceededAmount,PostalVariationAmount)
 		select @transdate,@customerid,@equipmentid,@quantity,@grossamount,@Discountamount,@floatrateamount,@floatexceededamount,@postalvariationamount
@@ -96,12 +95,11 @@ Returns Table
 AS
 Return
 (
-		select top (@rownumber)et.transid, et.transdate,et.quantity, et.GrossAmount,c.CustomerName,e.EquipmentName from Equipment_Transaction et
-		join Customer c on c.CustomerID=et.CustomerID
-		join Equipment e on e.EquipmentID=et.EquipmentID
-		where year(transdate) =@transdate 
-		order by GrossAmount desc
-		
+select top (@rownumber)et.transid, et.transdate,et.quantity, et.GrossAmount,c.CustomerName,e.EquipmentName from Equipment_Transaction et
+join Customer c on c.CustomerID=et.CustomerID
+join Equipment e on e.EquipmentID=et.EquipmentID
+where year(transdate) =@transdate 
+order by GrossAmount desc		
 )
 
 select * from Topcustomer(2019,10)
